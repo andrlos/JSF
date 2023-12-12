@@ -61,7 +61,10 @@ def _dot_split(name):
     name = name.strip()
     whole_end = get_dottedsuffix(name)
     period_parts = whole_end.split('.')
-    without_rpm = period_parts[:-1]
+    if "rpm" in period_parts:
+        without_rpm = period_parts[:-1]
+    else:
+        without_rpm = period_parts
     num_p = len(without_rpm)
     release = '.'.join(without_rpm[: num_p - 2])
     dist, arch = without_rpm[num_p - 2:]

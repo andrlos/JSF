@@ -238,9 +238,9 @@ class OpenJdkLatest(OpenJdk11DebugFc):
             subpackages.update(self._get_debug_debuginfo())
             subpackages.update(self._get_debuginfo())
             subpackages.update({"src" + suffix})
+            subpackages.discard('accessibility' + suffix)
 
-        subpackages.discard('accessibility-slowdebug')
-        subpackages.discard('accessibility-fastdebug')
+        subpackages.discard("demo")
         return subpackages
 
 

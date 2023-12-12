@@ -36,7 +36,7 @@ class Default(cs.JdkConfiguration):
             given_requires = self._get_artificial_requires(filename)
             missing_requires = []
             for require in expected_requires:
-                if not tu.passed_or_failed(self, self._is_in_requires(require, given_requires), make_rpm_readable(filename) + " is missing reuqire: " + require):
+                if not tu.passed_or_failed(self, self._is_in_requires(require, given_requires), make_rpm_readable(filename) + " is missing require: " + require):
                     missing_requires.append(require)
 
         self._document(documentation)

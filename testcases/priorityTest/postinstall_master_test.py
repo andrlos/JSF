@@ -216,15 +216,39 @@ class OpenJdk12OtherArches(OpenJdk9OtherArchs):
         return masters
 
 
-class OpenJdk13(OpenJdk9OtherArchs):
+class OpenJdk17(OpenJdk9OtherArchs):
     def _generate_masters(self):
-        masters = super(OpenJdk13, self)._generate_masters()
+        masters = super(OpenJdk17, self)._generate_masters()
         return masters
 
 
-class OpenJdk13arm7vhl(OpenJdk9Armvhl):
+class OpenJdk17arm7vhl(OpenJdk9Armvhl):
     def _generate_masters(self):
-        masters = super(OpenJdk13arm7vhl, self)._generate_masters()
+        masters = super(OpenJdk17arm7vhl, self)._generate_masters()
+        return masters
+
+
+class OpenJdk21(OpenJdk17):
+    def _generate_masters(self):
+        masters = super(OpenJdk21, self)._generate_masters()
+        masters[JAVADOC].append(JAVADOCDIR + "_" + self._get_version() + "_" + self._get_vendor())
+        masters[JAVADOC].append(JAVADOCDIR + "_" + self._get_version())
+        masters[JAVADOC].append(JAVADOCDIR + "_" + self._get_vendor())
+        masters[JAVADOC_ZIP].append(JAVADOCZIP + "_" + self._get_vendor())
+        masters[JAVADOC_ZIP].append(JAVADOCZIP + "_" + self._get_version())
+        masters[JAVADOC_ZIP].append(JAVADOCZIP + "_" + self._get_version() + "_" + self._get_vendor())
+        return masters
+
+
+class OpenJdk21arm7vhl(OpenJdk17arm7vhl):
+    def _generate_masters(self):
+        masters = super(OpenJdk21arm7vhl, self)._generate_masters()
+        masters[JAVADOC].append(JAVADOCDIR + "_" + self._get_version() + "_" + self._get_vendor())
+        masters[JAVADOC].append(JAVADOCDIR + "_" + self._get_version())
+        masters[JAVADOC].append(JAVADOCDIR + "_" + self._get_vendor())
+        masters[JAVADOC_ZIP].append(JAVADOCZIP + "_" + self._get_vendor())
+        masters[JAVADOC_ZIP].append(JAVADOCZIP + "_" + self._get_version())
+        masters[JAVADOC_ZIP].append(JAVADOCZIP + "_" + self._get_version() + "_" + self._get_vendor())
         return masters
 
 
@@ -414,11 +438,17 @@ class PostinstallScriptTest(bt.BaseTest):
             elif int(rpms.getMajorVersionSimplified()) == 12:
                 self.csch = OpenJdk12OtherArches()
                 return
-            elif int(rpms.getMajorVersionSimplified()) >= 13:
+            elif int(rpms.getMajorVersionSimplified()) == 17:
                 if self.getCurrentArch() in gc.getArm32Achs():
-                    self.csch = OpenJdk13arm7vhl()
+                    self.csch = OpenJdk17arm7vhl()
                     return
-                self.csch = OpenJdk13()
+                self.csch = OpenJdk17()
+                return
+            elif int(rpms.getMajorVersionSimplified()) >= 21:
+                if self.getCurrentArch() in gc.getArm32Achs():
+                    self.csch = OpenJdk21arm7vhl()
+                    return
+                self.csch = OpenJdk21()
                 return
             else:
                 raise ex.UnknownJavaVersionException("Unknown JDK version.")

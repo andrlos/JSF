@@ -224,8 +224,8 @@ class OpenJdkLatest(OpenJdk11):
                       'jconsole',
                       'jdb', 'jdeprscan', 'jdeps', 'jhsdb', 'jimage', 'jinfo', 'jlink', 'jmap', 'jmod', 'jps',
                       'jrunscript',
-                      'jshell', 'jstack', 'jstat', 'jstatd', 'serialver', 'jfr', 'jpackage']
-    HEADLESS_BINARIES = ["java", "keytool", "rmiregistry", 'alt-java']
+                      'jshell', 'jstack', 'jstat', 'jstatd', 'serialver', 'jfr', 'jpackage', 'jwebserver']
+    HEADLESS_BINARIES = ["java", "keytool", "rmiregistry"]
 
     def remove_binaries_without_slaves(self, args=None):
         subpackage = self._get_jre_subpackage()[0]
