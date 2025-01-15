@@ -14,7 +14,7 @@ import utils.core.base_xtest as bx
 import config.verbosity_config as vc
 
 def closeTestSuite(passed, failed, mtc):
-    la.LoggingAccess().stdout("Arch-independet mehtods counted: " + str(mtc))
+    la.LoggingAccess().stdout("Arch-independent methods counted: " + str(mtc))
     la.LoggingAccess().stdout("Passed=" + str(passed))
     la.LoggingAccess().stdout("Failed=" + str(failed))
     la.LoggingAccess().stdout("Total=" + str(failed + passed))
@@ -112,8 +112,8 @@ def removeNoarchSrpmArch(arches):
     return nwList
 
 
-def saveStringsAsTmpFile(strings, suffix):
-    tf = tempfile.NamedTemporaryFile(mode="wt", suffix=suffix, delete=False)
+def saveStringsAsTmpFile(strings, suffix, location=None):
+    tf = tempfile.NamedTemporaryFile(mode="wt", suffix=suffix, delete=False, dir=location)
     for item in strings:
         tf.file.write(str(item + "\n"))
     tf.flush()

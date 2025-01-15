@@ -1,0 +1,11 @@
+# Define a build argument for the base image
+ARG BASE_IMAGE=fedora:rawhide
+
+# Use the argument in the FROM directive
+FROM $BASE_IMAGE
+
+# Example of an operation that will be run on any base image
+ARG PACKAGE
+RUN rpm2cpio $PACKAGE | cpio -idmv -D /
+
+CMD ["bash"]

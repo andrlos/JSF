@@ -149,7 +149,7 @@ class PathTest(BaseTest):
         return
 
     def _get_paths(self):
-        paths = DefaultMock().executeCommand(["echo $PATH"])
+        paths = DefaultMock().executeCommand(['\'echo $PATH\''])
         if paths[1] != 0:
             raise MockExecutionException("Command echo $PATH failed.")
         paths = paths[0].split(os.pathsep)

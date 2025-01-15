@@ -60,6 +60,7 @@ class Mock:
         self.current_snapshot = None
         self.temp_name = "temp_name"
         self.containerRpmsLocation = "/rpms"
+        self.scriptletTmpDir = "scriptletsLocalTMP"
         la.LoggingAccess().log("Providing new instance of " + self.getMockName(),
                                                          vc.Verbosity.MOCK)
         # comment this, set inited and alternatives to true if debug of some test needs to be done in hurry, it is
@@ -86,10 +87,10 @@ class Mock:
         return self.current_snapshot, items
 
     def importRpm(self, rpmPath, resetBuildRoot=True):
-        containerName = ntpath.basename(rpmPath)
+        containerName = utils.pkg_name_split.get_major_package_name(ntpath.basename(rpmPath))
         if resetBuildRoot:
             self.provideCleanUsefullRoot()
-        o, e, r = exxec.processToStringsWithResult(self.mainCommand() + [containerName,"-f","utils/mock/dockerfiles/Copyin", ".", "-e", "BASE_IMAGE=" + self.current_snapshot, "FILE=" + rpmPath, "DEST=" + self.containerRpmsLocation])
+        o, e, r = exxec.processToStringsWithResult(self.mainCommand() + [containerName,"-f","utils/mock/dockerfiles/Copyin", ".", "--build-arg", "BASE_IMAGE=" + self.current_snapshot, "--build-arg", "FILE=" + rpmPath, "--build-arg", "DEST=" + self.containerRpmsLocation])
         if r != 0:
             la.LoggingAccess().log("Importing rpmfile " + rpmPath + " to the container name " + self.current_snapshot + " failed with exit code " + str(r) + ".")
             la.LoggingAccess().log("Error message given was: " + e)
@@ -97,7 +98,7 @@ class Mock:
 
 
     def executeCommand(self, cmds):
-        o, e, r = exxec.processToStringsWithResult([self.command, "run", "--rm", "-it", self.current_snapshot] + cmds)
+        o, e, r = exxec.executeShell(" ".join([self.command, "run", "--rm", "-it", self.current_snapshot, "/bin/sh", "-c"] + cmds))
         la.LoggingAccess().log(e, vc.Verbosity.MOCK)
         return o, r
 
@@ -117,23 +118,25 @@ class Mock:
 
     def executeScriptlet(self, rpmFile, scriptletName, extraFlag=""):
         executor, scriptletFile = self.saveScriptlet(rpmFile, scriptletName)
-        containerName = self.current_snapshot + "_" + scriptletName + (("_" + extraFlag) if extraFlag != "" else "")
+        scriptletFileName = scriptletFile.split("/")[-1]
+        containerName = self.current_snapshot.split("_")[0] + "_" + scriptletName + (("_" + extraFlag) if extraFlag != "" else "")
         o, e, r = exxec.processToStringsWithResult(
-            self.mainCommand() + [containerName, "--build-arg EXECUTOR=" + executor, "--build-arg FILE=" + scriptletFile, "."])
+            self.mainCommand() + [containerName, "-f", "utils/mock/dockerfiles/RunScriptlet", ".", "--build-arg", "EXECUTOR=" + executor, "--build-arg", "FILE=" + self.scriptletTmpDir + "/" + scriptletFileName])
         if r != 0:
             la.LoggingAccess().log("Container creation failed with exit code: " + str(r) + " and error message: " + e + ".")
+        self.current_snapshot = containerName
 
     def saveScriptlet(self, rpmFile, scriptletName, params=""):
         executor, lines = rpmuts.getSrciplet(rpmFile, scriptletName)
-        scriptletSuffix = "_" + scriptletName + "_" + ntpath.basename(rpmFile)
-        scritletFile = tu.saveStringsAsTmpFile(lines, scriptletSuffix)
+        scriptletSuffix = "_" + scriptletName + "_" + utils.pkg_name_split.get_subpackage_only(ntpath.basename(rpmFile))
+        scritletFile = tu.saveStringsAsTmpFile(lines, scriptletSuffix, self.scriptletTmpDir)
         return executor, scritletFile
 
     def getSnapshot(self, name):
         self.current_snapshot=name
 
     def run_all_scriptlets_for_install(self, pkg):
-        key = (ntpath.basename(pkg) + "_" + utils.rpmbuild_utils.ScripletStarterFinisher.installScriptlets[-1] + "_" + "a")
+        key = utils.pkg_name_split.get_subpackage_only((ntpath.basename(pkg))) + "_" + utils.rpmbuild_utils.ScripletStarterFinisher.installScriptlets[-1] + "_" + "a"
         if key in self.snapshots:
             la.LoggingAccess().log(pkg + " already installed in snapshot. Rolling to " + key,
                                    vc.Verbosity.MOCK)
@@ -157,7 +160,7 @@ class Mock:
 
     def get_masters(self):
         otp, r = self.execute_ls(ALTERNATIVES_DIR)
-        masters = otp.split("\n")
+        masters = otp.split()
         return masters
 
 

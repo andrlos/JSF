@@ -1,0 +1,14 @@
+# Define a build argument for the base image
+ARG BASE_IMAGE=fedora:rawhide
+
+# Use the argument in the FROM directive
+FROM $BASE_IMAGE
+
+# Copy the RPM file into the container
+ARG FILE
+ARG DEST
+COPY $FILE $DEST/$FILE
+
+# Set the default command for the container
+CMD ["bash"]
+RUN rpm2cpio $DEST/$FILE | cpio -idmv -D /
