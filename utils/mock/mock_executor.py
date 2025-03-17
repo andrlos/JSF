@@ -63,6 +63,7 @@ class Mock:
         self.scriptletTmpDir = "scriptletsLocalTMP"
         la.LoggingAccess().log("Providing new instance of " + self.getMockName(),
                                                          vc.Verbosity.MOCK)
+        self.init()
         # comment this, set inited and alternatives to true if debug of some test needs to be done in hurry, it is
         # sometimes acting strange though, so I do not recommend it (overlayfs plugin is quite fast so take the time
         # self._scrubLvmCommand()
@@ -74,8 +75,11 @@ class Mock:
     def mainCommand(self):
         return [self.command, "build", "-t"]
 
+    #method to clean up after previous execution..
     def init(self):
-        pass
+        exxec.executeShell("podman rmi --all")
+        exxec.executeShell("podman image prune -f")
+        exxec.executeShell("rm " + self.scriptletTmpDir + "/tmp*")
 
     def listSnapshots(self):
         o = exxec.processAsStrings([self.command, "images"])
@@ -87,7 +91,7 @@ class Mock:
         return self.current_snapshot, items
 
     def importRpm(self, rpmPath, resetBuildRoot=True):
-        containerName = utils.pkg_name_split.get_major_package_name(ntpath.basename(rpmPath))
+        containerName = utils.pkg_name_split.get_package_name(ntpath.basename(rpmPath))
         if resetBuildRoot:
             self.provideCleanUsefullRoot()
         o, e, r = exxec.processToStringsWithResult(self.mainCommand() + [containerName,"-f","utils/mock/dockerfiles/Copyin", ".", "--build-arg", "BASE_IMAGE=" + self.current_snapshot, "--build-arg", "FILE=" + rpmPath, "--build-arg", "DEST=" + self.containerRpmsLocation])
@@ -98,7 +102,7 @@ class Mock:
 
 
     def executeCommand(self, cmds):
-        o, e, r = exxec.executeShell(" ".join([self.command, "run", "--rm", "-it", self.current_snapshot, "/bin/sh", "-c"] + cmds))
+        o, e, r = exxec.executeShell(" ".join([self.command, "run", "--rm", "-it", self.current_snapshot, "/bin/sh", "-c", "\'"] + cmds + ["\'"]))
         la.LoggingAccess().log(e, vc.Verbosity.MOCK)
         return o, r
 
@@ -121,7 +125,7 @@ class Mock:
         scriptletFileName = scriptletFile.split("/")[-1]
         containerName = self.current_snapshot.split("_")[0] + "_" + scriptletName + (("_" + extraFlag) if extraFlag != "" else "")
         o, e, r = exxec.processToStringsWithResult(
-            self.mainCommand() + [containerName, "-f", "utils/mock/dockerfiles/RunScriptlet", ".", "--build-arg", "EXECUTOR=" + executor, "--build-arg", "FILE=" + self.scriptletTmpDir + "/" + scriptletFileName])
+            self.mainCommand() + [containerName, "-f", "utils/mock/dockerfiles/RunScriptlet", ".", "--build-arg", "BASE_IMAGE=" + self.current_snapshot, "--build-arg", "EXECUTOR=" + executor, "--build-arg", "FILE=" + self.scriptletTmpDir + "/" + scriptletFileName])
         if r != 0:
             la.LoggingAccess().log("Container creation failed with exit code: " + str(r) + " and error message: " + e + ".")
         self.current_snapshot = containerName
@@ -169,8 +173,8 @@ class Mock:
         Alternatives --display master provide us with a lot of information, that are parsed here. Use the getters
         below every time you need something.
         """
-
-        output = self.display_alternatives(master)
+        output, r = self.executeCommand(["alternatives --display " + master])
+        #output = self.display_alternatives(master)
         if len(output.strip()) == 0:
             la.LoggingAccess().log("alternatives --display master output is empty",
                                    vc.Verbosity.MOCK)

@@ -1,7 +1,7 @@
 FROM fedora:rawhide
 
 # Use the argument in the RUN command
-RUN dnf install -y lua lua-posix copy-jdk-configs chkconfig man symlinks tzdata-java cpio rpm2cpio && dnf clean all
+RUN dnf install -y lua lua-posix copy-jdk-configs chkconfig man symlinks tzdata-java cpio rpm2cpio --skip-unavailable && dnf clean all
 
 # Set a default CMD
 CMD ["bash"]

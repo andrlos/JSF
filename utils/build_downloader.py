@@ -5,7 +5,7 @@ import ntpath
 import os
 import shutil
 
-import urllib3
+#import urllib3
 
 import utils.pkg_name_split as split
 import config.global_config
@@ -43,7 +43,7 @@ def _downloadBrewKojiBuilds(pkgs, targetDir):
             url = mainUrl + pkg.replace("/mnt/redhat/", "/")
         la.LoggingAccess().log("downloading " + str(i + 1) + "/" + str(len(pkgs)) + " - " + url, vc.Verbosity.TEST)
         targetFile = targetDir + "/" + ntpath.basename(pkg)
-        http = urllib3.PoolManager()
+        http = "bullshit" #urllib3.PoolManager()
         with http.request('GET', url, preload_content=False) as r, open(targetFile, 'wb') as out_file:
             shutil.copyfileobj(r, out_file)
 
