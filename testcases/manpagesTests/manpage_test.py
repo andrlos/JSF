@@ -99,7 +99,7 @@ class ManpageTestMethods(cs.JdkConfiguration):
     def _get_manpages_without_postscript(self, default_mans, subpkg):
         return self._clean_default_mpges(default_mans,
                                   mexe.DefaultMock().execute_ls(tc.MAN_DIR)[0]
-                                  .split("\n"))
+                                  .split())
 
     def _get_subpackages(self):
         return []
@@ -193,9 +193,9 @@ class ManpageTestMethods(cs.JdkConfiguration):
         manpages_with_postscript = {}
 
         mexe.DefaultMock().provideCleanUsefullRoot()
-        default_mans = mexe.DefaultMock().execute_ls(tc.MAN_DIR)[0].split("\n")
-        usr_bin_content = mexe.DefaultMock().execute_ls("/usr/bin")[0].split("\n")
-        plugin_bin_content = mexe.DefaultMock().execute_ls(self._itw_plugin_bin_location())[0].split("\n")
+        default_mans = mexe.DefaultMock().execute_ls(tc.MAN_DIR)[0].split()
+        usr_bin_content = mexe.DefaultMock().execute_ls("/usr/bin")[0].split()
+        plugin_bin_content = mexe.DefaultMock().execute_ls(self._itw_plugin_bin_location())[0].split()
 
         for pkg in pkgs:
             name = os.path.basename(pkg)
@@ -216,7 +216,7 @@ class ManpageTestMethods(cs.JdkConfiguration):
                 if m not in checked_masters:
                     continue
                 tg = self._get_target(m)
-                binaries = mexe.DefaultMock().execute_ls(tg)[0].split("\n")
+                binaries = mexe.DefaultMock().execute_ls(tg)[0].split()
                 binaries = self._clean_up_binaries(binaries, m, usr_bin_content)
                 binaries = self._remove_java_rmi_cgi(binaries)
                 binaries = self._remove_excludes(binaries)
@@ -231,7 +231,7 @@ class ManpageTestMethods(cs.JdkConfiguration):
                 bins[_subpkg] = copy.deepcopy(binaries + plugin_binaries)
 
             # check links
-            manpages = self._clean_default_mpges(default_mans, mexe.DefaultMock().execute_ls(tc.MAN_DIR)[0].split("\n"))
+            manpages = self._clean_default_mpges(default_mans, mexe.DefaultMock().execute_ls(tc.MAN_DIR)[0].split())
 
             if len(manpages) != 0:
                 manpages_with_postscript[_subpkg] = manpages
@@ -409,7 +409,7 @@ class ITW(ManpageTestMethods):
         ls = mexe.DefaultMock().execute_ls(self._itw_plugin_bin_location())
         if ls[1] != 0:
             raise NotADirectoryError("dir not found")
-        plugin_bin = list(set(ls[0].split("\n")) - set(plugin_bin_content))
+        plugin_bin = list(set(ls[0].split()) - set(plugin_bin_content))
         return plugin_bin
 
     # manpage files might differ from binary names
@@ -524,7 +524,7 @@ class Temurin8(ManpageTestMethods):
     def _get_manpages_without_postscript(self, default_mans, subpkg):
         return self._clean_default_mpges(default_mans,
                                   mexe.DefaultMock().execute_ls(tc.JVM_DIR + "/" + self.rpms.getMajorPackage() + "-" + subpkg + "/man/man1")[0]
-                                  .split("\n"))
+                                  .split())
 
 
 class Temurin11(Temurin8):

@@ -134,7 +134,7 @@ class PathTest(BaseTest):
                 if content[1] != 0:
                     content = []
                 else:
-                    content = content[0].split("\n")
+                    content = content[0].split()
                 path_contents[path] = content
 
             self.binaries_test.log("Validating binaries paths for {} subpackage: ".format(_subpkg), vc.Verbosity.TEST)
@@ -149,7 +149,7 @@ class PathTest(BaseTest):
         return
 
     def _get_paths(self):
-        paths = DefaultMock().executeCommand(['\'echo $PATH\''])
+        paths = DefaultMock().executeCommand(['printenv PATH'])
         if paths[1] != 0:
             raise MockExecutionException("Command echo $PATH failed.")
         paths = paths[0].split(os.pathsep)

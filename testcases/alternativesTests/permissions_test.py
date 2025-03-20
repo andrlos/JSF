@@ -67,7 +67,7 @@ class BaseTest(JdkConfiguration):
             # get content of jvm directory
             jvm_dir = self._get_target_java_directory(name)
             out, result = DefaultMock().executeCommand(["ls -LR " + JVM_DIR + "/" + jvm_dir])
-            out = out.split("\n")
+            out = out.split()
             fails = []
             clearedout = []
             for line in out:
@@ -87,7 +87,7 @@ class BaseTest(JdkConfiguration):
             valid_targets = self._parse_output(clearedout, subpackage)
             self.sort_and_test(valid_targets, subpackage, name)
 
-            manpages = two_lists_diff(DefaultMock().execute_ls(MAN_DIR)[0].split("\n"), default_manpages)
+            manpages = two_lists_diff(DefaultMock().execute_ls(MAN_DIR)[0].split(), default_manpages)
             for manpage in manpages:
                 self.sort_and_test([MAN_DIR + "/" + manpage], subpackage, name)
 
@@ -104,13 +104,14 @@ class BaseTest(JdkConfiguration):
         for line in out:
             if line == "":
                 continue
-            elif "cannot access" in line:
-                if passed_or_failed(self, subpackage == DEVEL and "/bin/" in line,
-                                    "In subpackage {} following was found: ".format(subpackage) + line,
-                                    "In subpackage {} following was found: ".format(subpackage) + line +
+            elif "cannot access" in " ".join(out):
+                error_line = " ".join(out)
+                if passed_or_failed(self, subpackage == DEVEL and "/bin/" in error_line,
+                                    "In subpackage {} following was found: ".format(subpackage) + error_line,
+                                    "In subpackage {} following was found: ".format(subpackage) + error_line +
                                     "This might be expected behaviour and should be only sanity checked."):
-                    self.invalid_file_candidates.append(line)
-                    continue
+                    self.invalid_file_candidates.append(error_line)
+                    return return_targets
                 else:
                     self.invalid_file_candidates.append(line)
                     PermissionTest.instance.log("Unexpected filetype. Needs manual inspection.")

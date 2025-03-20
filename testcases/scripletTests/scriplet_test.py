@@ -89,7 +89,8 @@ class ScriptletTest(utils.core.base_xtest.BaseTest):
                         o, r = DefaultMock().executeScriptlet(pkg, scriplet, arg)
                         self.log(scriplet + " returned " + str(r) + " of " + ntpath.basename(pkg))
                         tu.passed_or_failed(self, r == 0,
-                                            "scriptlet {} returning non zero value for {}".format(scriplet, pkg))
+                                            "scriptlet {} returning non zero value for {}".format(scriplet, pkg)
+                                            + ". Reason:\"{}\"".format(o))
         return self.passed, self.failed
 
     def setCSCH(self):

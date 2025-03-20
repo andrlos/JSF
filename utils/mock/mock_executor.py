@@ -129,6 +129,7 @@ class Mock:
         if r != 0:
             la.LoggingAccess().log("Container creation failed with exit code: " + str(r) + " and error message: " + e + ".")
         self.current_snapshot = containerName
+        return o, r
 
     def saveScriptlet(self, rpmFile, scriptletName, params=""):
         executor, lines = rpmuts.getSrciplet(rpmFile, scriptletName)

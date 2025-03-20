@@ -120,7 +120,7 @@ class GetAllBinariesAndSlaves(btp.PathTest):
             slaves = self.get_slaves(_subpkg)
 
             self.installed_slaves[_subpkg] = slaves
-            self.installed_binaries[_subpkg] = binaries[0].split("\n")
+            self.installed_binaries[_subpkg] = binaries[0].split()
 
         return self.installed_binaries, self.installed_slaves
 

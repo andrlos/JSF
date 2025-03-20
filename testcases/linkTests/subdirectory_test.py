@@ -121,7 +121,7 @@ class BaseMethods(JdkConfiguration):
                 passed_or_failed(self, False, "Warning: " + JVM_DIR + " does not exist, skipping subdirectory test for"
                                 " given subpackage {}".format(_subpkg))
                 continue
-            subdirectories = subdirectories[0].split("\n")
+            subdirectories = subdirectories[0].split()
             subdirectories = self._remove_fake_subdirectories(subdirectories)
             expected_subdirectories = self._get_expected_subdirectories(name)[_subpkg]
             expected_subdirectories = set(expected_subdirectories)
