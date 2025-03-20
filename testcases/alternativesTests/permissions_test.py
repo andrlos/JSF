@@ -111,11 +111,11 @@ class BaseTest(JdkConfiguration):
                                     "In subpackage {} following was found: ".format(subpackage) + error_line +
                                     "This might be expected behaviour and should be only sanity checked."):
                     self.invalid_file_candidates.append(error_line)
-                    return return_targets
+                    continue
                 else:
                     self.invalid_file_candidates.append(line)
                     PermissionTest.instance.log("Unexpected filetype. Needs manual inspection.")
-                continue
+                return return_targets
             elif header.search(line):
                 current_header = header.match(line)
                 current_header = current_header.group(0).strip(":")
