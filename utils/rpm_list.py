@@ -190,7 +190,7 @@ class RpmList:
         os = self.getOsVersion()
         version = gc.UNSPECIFIED
         if os is not gc.UNSPECIFIED:
-            version = int(re.sub("\..*","", os))
+            version = int(re.sub(r"\..*","", os))
         return version
 
     def getRpmWholeName(self, pkg, arch):

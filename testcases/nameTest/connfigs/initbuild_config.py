@@ -63,7 +63,7 @@ class OthersVersionCheck(DefaultCheck):
             " For modern jdks (jdk 9+)  the major version is just plain number. Eg.: java-9-ibm."
             " The extracted middle number *is* number")
         la.LoggingAccess().log("non itw call for checkMajorVersionSimplified")
-        return re.compile("[0-9]+").match(version) and int(version) > 0
+        return re.compile(r"[0-9]+").match(version) and int(version) > 0
 
     def checkMajorVersion(self, version=None):
         self._document("The version string in middle of package name is one of: " + ",".join(

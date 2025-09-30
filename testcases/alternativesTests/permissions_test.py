@@ -99,7 +99,7 @@ class BaseTest(JdkConfiguration):
     def _parse_output(self, out, subpackage):
         """Output of the file listing must be parsed into something more readable and easier to process."""
         return_targets = []
-        header = re.compile("/[^:]*:")
+        header = re.compile(r"/[^:]*:")
         current_header = ""
         for line in out:
             if line == "":

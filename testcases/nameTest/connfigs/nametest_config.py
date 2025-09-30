@@ -3,25 +3,25 @@ import re
 import outputControl.logging_access as la
 from utils.core.configuration_specific import JdkConfiguration
 
-JAVA_REGEX8="^java-(1\.[5-8]\.[0-9])-.*-.*-.*\..*.rpm$"
+JAVA_REGEX8=r"^java-(1\.[5-8]\.[0-9])-.*-.*-.*\..*.rpm$"
 # java-1.X.0 or just 9-whatever1-whatever2-whatever3.whatever4.rpm
 # w1 = vendor, w2 = version
 # w3 = release, w4 = arch .rpm
 CRES_JAVA_REGEXE8 = re.compile(JAVA_REGEX8)
 
-JAVA_REGEX9="^java-([1-9][0-9]*)-.*-.*-.*\..*.rpm$"
+JAVA_REGEX9=r"^java-([1-9][0-9]*)-.*-.*-.*\..*.rpm$"
 CRES_JAVA_REGEXE9 = re.compile(JAVA_REGEX9)
 
-JAVA_REGEX10="^java-([10-20])-.*-.*-.*\..*.rpm$"
+JAVA_REGEX10=r"^java-([10-20])-.*-.*-.*\..*.rpm$"
 CRES_JAVA_REGEXE10 = re.compile(JAVA_REGEX9)
 
-JAVA_REGEX_ROLLING="^java-latest-openjdk.*-.*\..*.rpm$"
+JAVA_REGEX_ROLLING=r"^java-latest-openjdk.*-.*\..*.rpm$"
 CRES_JAVA_REGEXEROLLING = re.compile(JAVA_REGEX_ROLLING)
 
-ITW_REGEX="^icedtea-web-.*-.*\..*.rpm$"
+ITW_REGEX=r"^icedtea-web-.*-.*\..*.rpm$"
 CRES_ITW_REGEXE = re.compile(ITW_REGEX)
 
-TEMURIN_REGEX="^temurin-([0-9]*)-.*-.*-.*\..*.rpm$"
+TEMURIN_REGEX=r"^temurin-([0-9]*)-.*-.*-.*\..*.rpm$"
 CRES_TEMURIN_REGEXE = re.compile(TEMURIN_REGEX)
 
 class ItwRegexCheck(JdkConfiguration):

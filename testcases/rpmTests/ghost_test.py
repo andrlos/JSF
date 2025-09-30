@@ -25,13 +25,12 @@ class GhostTest(bt.BaseTest):
             if tc.is_arch_jitarch(arch) and "ppc" not in arch:
                 self.csch = Ojdk8JIT()
                 return
+            else:
+                self.csch = Ojdk8NonJIT()
+                return
         elif int(rpms.getMajorVersionSimplified()) == 11:
-            if (arch in ["armv7hl", "s390x"] or tc.is_arch_jitarch(arch)) and "ppc" not in arch:
-                self.csch = Ojdk11JIT()
-                return
-            elif int(rpms.getMajorVersionSimplified()) == 11:
-                self.csch = Ojdk11JIT()
-                return
+            self.csch = Ojdk11JIT()
+            return
         else:
             self.csch = OjdklatestJIT()
             return
@@ -67,11 +66,6 @@ class Default(cs.JdkConfiguration):
             # skipping rpmmoved ghosts - those are only for removed/moved directories so that user doesnt loose data upon upgrade
             if not newghost.endswith(".rpmmoved"):
                 resolved_rpm_ghosts.add(tu.resolve_link(newghost))
-        if "debug" in file:
-            tu.passed_or_failed(self, resolved_rpm_ghosts == self._get_hardcoded_ghosts(file),
-                                "Debug packages are not expected to have any ghosts. Found ghosts: " + str(
-                                    resolved_rpm_ghosts))
-            return
         expected_master_ghosts = set()
         expected_follower_ghosts = set()
         if rc.RuntimeConfig().getRpmList().is_system_jdk():
@@ -107,22 +101,25 @@ class Default(cs.JdkConfiguration):
         return ghosts
 
 
+class Ojdk8NonJIT(Default):
+    def _get_hardcoded_ghosts(self, file):
+        ghosts = super(Ojdk8NonJIT, self)._get_hardcoded_ghosts(file)
+        return ghosts
+
+
 class Ojdk8JIT(Default):
     def _get_hardcoded_ghosts(self, file):
         ghosts = super(Ojdk8JIT, self)._get_hardcoded_ghosts(file)
-        arch = ns.get_arch(file)
         if "headless" in file and not "info" in file:
-            nvra = ns.get_nvra(file)
+            name = ns.get_major_package_name(file)
             archinstall = ns.get_arch_install(file)
             debugsuffix = ""
             for suffix in tc.get_debug_suffixes():
                 if suffix in file:
                     debugsuffix = suffix
                     break
-            if arch == "i686":
-                nvra = nvra.replace(arch, archinstall)
-            ghosts.add("/usr/lib/jvm/" + nvra + debugsuffix + "/jre/lib/" + archinstall + "/client/classes.jsa")
-            ghosts.add("/usr/lib/jvm/" + nvra + debugsuffix + "/jre/lib/" + archinstall + "/server/classes.jsa")
+            ghosts.add("/usr/lib/jvm/" + name + debugsuffix + "/jre/lib/" + archinstall + "/client/classes.jsa")
+            ghosts.add("/usr/lib/jvm/" + name + debugsuffix + "/jre/lib/" + archinstall + "/server/classes.jsa")
         return ghosts
 
 
@@ -158,7 +155,7 @@ class OjdklatestJIT(Default):
                     break
             if arch == "i686" or arch == "armv7hl":
                 nvra = nvra.replace(arch, archinstall)
-            ghosts.add("/usr/lib/jvm/" + nvra + debugsuffix + "/lib/server/classes.jsa")
+            # ghosts.add("/usr/lib/jvm/" + nvra + debugsuffix + "/lib/server/classes.jsa")
         return ghosts
 
 

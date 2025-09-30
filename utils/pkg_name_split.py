@@ -162,7 +162,7 @@ def get_name_version_release(name):
 
 
 def simplify_version(vers):
-    old_naming_regex = re.compile("^[0-9].[0-9].[0-9]$")
+    old_naming_regex = re.compile(r"^[0-9].[0-9].[0-9]$")
     if old_naming_regex.match(vers):
         return vers.split(".")[1]
     return vers
