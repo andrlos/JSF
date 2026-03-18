@@ -82,6 +82,6 @@ class OthersVersionCheck(DefaultCheck):
         return vendor in gc.LIST_OF_POSSIBLE_VENDORS_WITHOUT_ITW
 
 class TemurinCheck(OthersVersionCheck):
-    def checkOs(self):
+    def checkOs(self, vendor=None):
         la.LoggingAccess().log("Temurin is not os or osversion specific, this test is being skipped.")
         return self.passed, self.failed

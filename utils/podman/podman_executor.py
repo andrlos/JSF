@@ -99,6 +99,259 @@ class Podman:
             la.LoggingAccess().log("Importing rpmfile " + rpmPath + " to the container name " + self.current_snapshot + " failed with exit code " + str(r) + ".")
             la.LoggingAccess().log("Error message given was: " + e)
         self.current_snapshot=containerName
+    def importAllRpms(self, rpmsDirectory, resetBuildRoot=True, snapshotName=None):
+        """
+        Import all RPM files from a directory into the current snapshot image.
+        Creates a single Docker layer containing all extracted RPMs for efficiency.
+        
+        Args:
+            rpmsDirectory (str): Path to directory containing RPM files (relative or absolute).
+                                Example: "rpms17el8" or "/home/user/rpms"
+            resetBuildRoot (bool): If True, resets to clean build root before importing.
+                                  If False, imports on top of current snapshot. Default: True
+            snapshotName (str): Optional custom name for the resulting snapshot.
+                               If None, auto-generates: "all_rpms_<directory_name>"
+        
+        Returns:
+            str: Name of the created snapshot image
+        
+        Raises:
+            ValueError: If directory doesn't exist or contains no RPM files
+            Exception: If podman build fails
+        
+        Example:
+            >>> podman = DefaultPodman()
+            >>> podman.importAllRpms("rpms17el8")
+            'all_rpms_rpms17el8'
+            >>> podman.executeCommand(["java", "-version"])
+        """
+        # Validate directory exists
+        if not os.path.exists(rpmsDirectory):
+            raise ValueError(f"Directory not found: {rpmsDirectory}")
+        
+        # Scan for RPM files
+        rpm_files = [f for f in os.listdir(rpmsDirectory) if f.endswith('.rpm')]
+        if not rpm_files:
+            raise ValueError(f"No RPM files found in {rpmsDirectory}")
+        
+        la.LoggingAccess().log(f"Found {len(rpm_files)} RPM files in {rpmsDirectory}", 
+                              vc.Verbosity.PODMAN)
+        
+        # Reset to clean build root if requested
+        if resetBuildRoot:
+            self.provideCleanUsefullRoot()
+        
+        # Generate snapshot name if not provided
+        if snapshotName is None:
+            dir_basename = os.path.basename(rpmsDirectory.rstrip('/'))
+            snapshotName = f"all_rpms_{dir_basename}"
+        
+        # Build container with all RPMs using the ImportAllRpms dockerfile
+        la.LoggingAccess().log(f"Building snapshot '{snapshotName}' with {len(rpm_files)} RPMs from {rpmsDirectory}", 
+                              vc.Verbosity.PODMAN)
+        
+        o, e, r = exxec.processToStringsWithResult(
+            self.mainCommand() + 
+            [snapshotName, "-f", "utils/podman/dockerfiles/ImportAllRpms", ".", 
+             "--build-arg", f"BASE_IMAGE={self.current_snapshot}",
+             "--build-arg", f"RPMS_DIR={rpmsDirectory}"]
+        )
+        
+        # Error handling
+        if r != 0:
+            la.LoggingAccess().log(
+                f"Importing all RPMs from {rpmsDirectory} to snapshot '{snapshotName}' failed with exit code {r}",
+                vc.Verbosity.ERROR
+            )
+            la.LoggingAccess().log(f"Error message: {e}", vc.Verbosity.ERROR)
+            raise Exception(f"Failed to import RPMs from {rpmsDirectory}: {e}")
+        
+        # Update current snapshot
+        self.current_snapshot = snapshotName
+        la.LoggingAccess().log(
+            f"Successfully imported {len(rpm_files)} RPMs into snapshot '{snapshotName}'",
+            vc.Verbosity.PODMAN
+        )
+        
+        return snapshotName
+    # Containerized RPM utility methods - platform independent
+    # These methods execute rpm commands inside the container instead of on the host
+    
+    def containerized_listFilesInPackage(self, rpmFile):
+        """
+        List files in an RPM package using the container's rpm command.
+        
+        Args:
+            rpmFile (str): Path to RPM file (should be in containerRpmsLocation)
+        
+        Returns:
+            list: List of file paths in the package
+        """
+        rpm_basename = ntpath.basename(rpmFile)
+        rpm_path = f"{self.containerRpmsLocation}/{rpm_basename}"
+        output, returncode = self.executeCommand(["rpm", "-qlp", rpm_path])
+        if returncode != 0:
+            la.LoggingAccess().log(f"Failed to list files in {rpmFile}", vc.Verbosity.ERROR)
+            return []
+        return output.strip().split('\n') if output.strip() else []
+    
+    def containerized_listDocsInPackage(self, rpmFile):
+        """
+        List documentation files in an RPM package using the container's rpm command.
+        
+        Args:
+            rpmFile (str): Path to RPM file (should be in containerRpmsLocation)
+        
+        Returns:
+            list: List of documentation file paths
+        """
+        rpm_basename = ntpath.basename(rpmFile)
+        rpm_path = f"{self.containerRpmsLocation}/{rpm_basename}"
+        output, returncode = self.executeCommand(["rpm", "-qldp", rpm_path])
+        if returncode != 0:
+            la.LoggingAccess().log(f"Failed to list docs in {rpmFile}", vc.Verbosity.ERROR)
+            return []
+        return output.strip().split('\n') if output.strip() else []
+    
+    def containerized_listConfigFilesInPackage(self, rpmFile):
+        """
+        List config files in an RPM package using the container's rpm command.
+        
+        Args:
+            rpmFile (str): Path to RPM file (should be in containerRpmsLocation)
+        
+        Returns:
+            list: List of config file paths
+        """
+        rpm_basename = ntpath.basename(rpmFile)
+        rpm_path = f"{self.containerRpmsLocation}/{rpm_basename}"
+        output, returncode = self.executeCommand(["rpm", "-qlcp", rpm_path])
+        if returncode != 0:
+            la.LoggingAccess().log(f"Failed to list config files in {rpmFile}", vc.Verbosity.ERROR)
+            return []
+        return output.strip().split('\n') if output.strip() else []
+    
+    def containerized_listOfRequires(self, rpmFile):
+        """
+        List package requirements using the container's rpm command.
+        
+        Args:
+            rpmFile (str): Path to RPM file (should be in containerRpmsLocation)
+        
+        Returns:
+            list: List of required packages
+        """
+        rpm_basename = ntpath.basename(rpmFile)
+        rpm_path = f"{self.containerRpmsLocation}/{rpm_basename}"
+        output, returncode = self.executeCommand(["rpm", "--requires", "-qp", rpm_path])
+        if returncode != 0:
+            la.LoggingAccess().log(f"Failed to list requires for {rpmFile}", vc.Verbosity.ERROR)
+            return []
+        return output.strip().split('\n') if output.strip() else []
+    
+    def containerized_listOfProvides(self, rpmFile):
+        """
+        List package provides using the container's rpm command.
+        
+        Args:
+            rpmFile (str): Path to RPM file (should be in containerRpmsLocation)
+        
+        Returns:
+            list: List of provided packages/capabilities
+        """
+        rpm_basename = ntpath.basename(rpmFile)
+        rpm_path = f"{self.containerRpmsLocation}/{rpm_basename}"
+        output, returncode = self.executeCommand(["rpm", "--provides", "-qp", rpm_path])
+        if returncode != 0:
+            la.LoggingAccess().log(f"Failed to list provides for {rpmFile}", vc.Verbosity.ERROR)
+            return []
+        return output.strip().split('\n') if output.strip() else []
+    
+    def containerized_listOfObsoletes(self, rpmFile):
+        """
+        List package obsoletes using the container's rpm command.
+        
+        Args:
+            rpmFile (str): Path to RPM file (should be in containerRpmsLocation)
+        
+        Returns:
+            list: List of obsoleted packages
+        """
+        rpm_basename = ntpath.basename(rpmFile)
+        rpm_path = f"{self.containerRpmsLocation}/{rpm_basename}"
+        output, returncode = self.executeCommand(["rpm", "--obsoletes", "-qp", rpm_path])
+        if returncode != 0:
+            la.LoggingAccess().log(f"Failed to list obsoletes for {rpmFile}", vc.Verbosity.ERROR)
+            return []
+        return output.strip().split('\n') if output.strip() else []
+    
+    def containerized_getSrciplet(self, rpmFile, scripletId):
+        """
+        Extract scriptlet from RPM using the container's rpm command.
+        
+        Args:
+            rpmFile (str): Path to RPM file (should be in containerRpmsLocation)
+            scripletId (str): Scriptlet identifier (e.g., 'postinstall', 'preinstall')
+        
+        Returns:
+            tuple: (executor, script_lines) where executor is the interpreter (e.g., '/bin/sh', 'lua')
+                   and script_lines is a list of script content lines
+        """
+        rpm_basename = ntpath.basename(rpmFile)
+        rpm_path = f"{self.containerRpmsLocation}/{rpm_basename}"
+        
+        # Get all scripts from the RPM
+        output, returncode = self.executeCommand(["rpm", "-qp", "--scripts", rpm_path])
+        if returncode != 0:
+            la.LoggingAccess().log(f"Failed to get scripts from {rpmFile}", vc.Verbosity.ERROR)
+            return ("/bin/sh", [])
+        
+        # Parse the output to find the specific scriptlet
+        lines = output.split('\n')
+        script_lines = []
+        in_scriptlet = False
+        executor = "/bin/sh"
+        
+        for line in lines:
+            # Check if this is the start of our scriptlet
+            if scripletId + " scriptlet" in line:
+                in_scriptlet = True
+                # Extract executor if specified
+                if "using" in line:
+                    executor = line.split("using")[1].strip().strip("):<>").strip()
+                continue
+            
+            # Check if we've hit another scriptlet (stop condition)
+            if in_scriptlet and " scriptlet" in line:
+                break
+            
+            # Collect script lines
+            if in_scriptlet:
+                script_lines.append(line)
+        
+        if not script_lines:
+            la.LoggingAccess().log(f"Scriptlet {scripletId} not found in {rpmFile}", vc.Verbosity.PODMAN)
+            return (executor, [])
+        
+        return (executor, script_lines)
+    
+    def containerized_rpmbuildEval(self, macro):
+        """
+        Evaluate an RPM macro using the container's rpmbuild command.
+        
+        Args:
+            macro (str): Macro name to evaluate (without %{})
+        
+        Returns:
+            str: Evaluated macro value
+        """
+        output, returncode = self.executeCommand(["rpmbuild", "--eval", f"%{{{macro}}}"])
+        if returncode != 0:
+            la.LoggingAccess().log(f"Failed to evaluate macro {macro}", vc.Verbosity.ERROR)
+            return ""
+        return output.strip()
+
+
 
 
     def executeCommand(self, cmds):

@@ -1,0 +1,18 @@
+# Define a build argument for the base image
+ARG BASE_IMAGE=fedora:rawhide
+
+# Use the argument in the FROM directive
+FROM $BASE_IMAGE
+
+# Copy all RPMs from the specified directory
+ARG RPMS_DIR
+COPY $RPMS_DIR/*.rpm /rpms/
+
+# Extract all RPMs into the root filesystem
+RUN for rpm in /rpms/*.rpm; do \
+    echo "Extracting $rpm..."; \
+    rpm2cpio "$rpm" | cpio -idmv -D / ; \
+    done
+
+# Set the default command for the container
+CMD ["bash"]

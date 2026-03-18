@@ -5,7 +5,7 @@ import ntpath
 import os
 import shutil
 
-import urllib3
+"""import urllib3"""
 
 import utils.pkg_name_split as split
 import config.global_config
